@@ -1,10 +1,11 @@
 import express from "express";
 const app = express();
+import userRoutes from "../src/routes/user.routes.js"
+import cookieParser from "cookie-parser"
 
-app.get("/d", (req, res) => {
-    res.status(200).json({
-        message: "gmrjij"
-    })
-})
+app.use(express.json())
+app.use(cookieParser())
+
+app.use("/api/auth", userRoutes)
 
 export default app;
