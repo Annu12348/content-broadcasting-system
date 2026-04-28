@@ -1,7 +1,7 @@
 import MongoContentRepository from "../repositories/implementations/mongoContentRepository.js";
 import AppError from "../utils/error.js";
 
-class ContentServices {
+class teacherServices {
     constructor() {
         this.MongoContentRepository = new MongoContentRepository();
     }
@@ -23,15 +23,22 @@ class ContentServices {
         }
     }
 
-    async uploadContentRead(uploadedBy) {
+    async teacherUploadContentRead(uploadedBy, query) {
         try {
-            const uploads = await this.MongoContentRepository.uploadedContentRead(uploadedBy)
+            if (!uploadedBy) {
+                throw new AppError("uploadedBy is required", 400);
+            }
+
+            const uploads = await this.MongoContentRepository.teacherUploadedContentRead(uploadedBy, query)
 
             return uploads;
         } catch (error) {
-            throw error;
+            throw new AppError(
+                error.message || "Service error in teacher uploads",
+                error.statusCode || 500
+            );
         }
     }
 }
 
-export default ContentServices;
+export default teacherServices;
