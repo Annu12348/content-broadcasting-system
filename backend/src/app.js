@@ -1,8 +1,6 @@
 import express from "express";
 const app = express();
 
-app.set('trust proxy', 1);
-
 import userRoutes from "../src/routes/user.routes.js"
 import teacherRoutes from "../src/routes/teacher.routes.js"
 import principalRoutes from "../src/routes/principal.routes.js"
