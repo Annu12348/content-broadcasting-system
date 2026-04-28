@@ -25,6 +25,7 @@ class UserController {
                 token: user.token
             })
         } catch (error) {
+            console.error(error)
             res.status(error.statusCode || 500).json({
                 message: error.message || "Internal Server Error",
                 success: false
