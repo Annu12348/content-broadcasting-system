@@ -1,179 +1,93 @@
-# 📄 Architecture Notes – Content Broadcasting System
+# 📡 Content Broadcasting System (Backend)
+
+A scalable backend system for broadcasting subject-based educational content to students’ devices. Teachers upload content, the Principal reviews and approves it, and approved content is served via a public API with time-based scheduling and rotation.
 
 ---
 
-## 1. 🔐 Authentication & RBAC Flow
+## 🚀 Tech Stack
 
-The system uses **JWT-based authentication**.
+* **Backend:** Node.js, Express.js
+* **Database:** MongoDB (Mongoose)
+* **Authentication:** JWT (JSON Web Token)
+* **File Upload:** Multer + AWS S3
+* **Validation:** Express Validator
+* **Architecture:** Controller → Service → Repository
 
-* User logs in → receives JWT token
-* Token is sent in headers:
+---
+
+## 📌 Features
+
+### 🔐 Authentication & RBAC
+
+* Secure login/signup with JWT
+* Role-based access:
+
+  * Teacher
+  * Principal
+
+---
+
+### 👨‍🏫 Teacher Features
+
+* Upload content (image-based)
+* Add:
+
+  * Title
+  * Subject
+  * Description
+  * Start & End time
+  * Rotation duration
+* View own uploaded content with status
+
+---
+
+### 👨‍💼 Principal Features
+
+* View all uploaded content
+* View pending content
+* Approve content
+* Reject content (with reason)
+
+---
+
+### 🔥 Public Broadcasting API
+
+* Endpoint: `/api/content/live/:teacherId`
+* Returns:
+
+  * Only approved content
+  * Only within active schedule window
+  * Subject-wise rotation logic
+* If no content available → returns proper message
+
+---
+
+### 🧠 Scheduling & Rotation Logic
+
+* Content is active only if:
 
   ```
-  Authorization: Bearer <token>
+  startTime <= currentTime <= endTime
   ```
-
-### Middleware Flow:
-
-1. `authUser` → verifies JWT and attaches user to request
-2. `authorizeRoles` → restricts access based on role
-
-### Roles:
-
-* **Teacher**
-
-  * Upload content
-  * View own content
-* **Principal**
-
-  * View all content
-  * Approve / Reject content
+* Each subject has independent rotation
+* Content rotates based on `rotationDuration`
+* Loop-based dynamic selection of active content
 
 ---
 
-## 2. 📚 Subject-Based System Design
+### 📂 File Upload
 
-* Each content belongs to a **subject** (maths, science, etc.)
-* Content is grouped dynamically based on subject
-* Each subject has **independent rotation logic**
-
-Example:
-
-* Maths → rotates among Maths content only
-* Science → rotates among Science content only
-
----
-
-## 3. 📂 Upload Handling Approach
-
-* File upload handled using **Multer + AWS S3**
-* Files are stored in S3 bucket
-* Only allowed formats:
+* Supported formats:
 
   * JPG
   * PNG
   * GIF
-* File size limit: 10MB
-
-### Metadata stored in DB:
-
-* fileUrl
-* fileType
-* fileSize
+* Max file size: 10MB
+* Stored in AWS S3
 
 ---
 
-## 4. ✅ Approval Workflow Design
-
-Content lifecycle:
-
-```
-uploaded → pending → approved / rejected
-```
-
-### Rules:
-
-* Only **Principal** can approve/reject
-
-* Approval sets:
-
-  * status = approved
-  * approvedBy
-  * approvedAt
-
-* Rejection sets:
-
-  * status = rejected
-  * rejectionReason (mandatory)
-  * rejectedAt
-
-### Important:
-
-* Only **approved content** is eligible for broadcasting
-
----
-
-## 5. ⏱️ Scheduling & Rotation Logic (CORE)
-
-### Step 1: Filtering
-
-Content is eligible only if:
-
-```
-status = approved
-startTime <= currentTime <= endTime
-isActive = true
-```
-
----
-
-### Step 2: Grouping
-
-* Content is grouped by subject
-
----
-
-### Step 3: Rotation Logic
-
-For each subject:
-
-1. Calculate total duration:
-
-   ```
-   totalDuration = sum(rotationDuration)
-   ```
-
-2. Calculate elapsed time:
-
-   ```
-   timePassed = (currentTime - firstContentTime)
-   ```
-
-3. Find current cycle:
-
-   ```
-   cycleTime = timePassed % totalDuration
-   ```
-
-4. Select active content:
-
-   * Iterate and find where cumulative duration matches
-
----
-
-### Output:
-
-* One active content per subject
-* If no content → return empty response
-
----
-
-## 6. 🗄️ Database Design Decisions
-
-Using **MongoDB (NoSQL)** instead of relational DB.
-
-### Reason:
-
-* Flexible schema
-* Nested scheduling fields
-* Faster development
-
-### Key Collections:
-
-#### Users
-
-* id, name, email, role
-
-#### Content
-
-* title, subject, file details
-* uploadedBy
-* status
-* schedule (nested object)
-
----
-
-## 7. 📁 Folder Structure
+## 🗂️ Folder Structure
 
 ```
 src/
@@ -187,40 +101,144 @@ src/
 ├── config/
 ```
 
-### Architecture Pattern:
+---
 
-Controller → Service → Repository
+## 🔑 API Endpoints
+
+### Auth
+
+* `POST /auth/signup` → Register new user
+* `POST /auth/login` → Authenticate and get JWT
 
 ---
 
-## 8. 🧩 Middleware Usage
+### Teacher
 
-* **authUser** → JWT verification
-* **authorizeRoles** → role-based access
-* **upload middleware** → file handling
-* **validation middleware** → request validation
-* **error handler** → centralized error handling
-* **rate limiting** → request handling
+* `POST /api/teacher/content/upload` → Upload content
+* `GET /api/teacher/content/my` → Get teacher’s content
 
 ---
 
-## 9. 🚀 Scalability Approach
+### Principal
 
-### Current:
+* `GET /api/principal/content/all` → Get all content
+* `GET /api/principal/content/pending` → Get pending content
+* `PATCH /api/principal/content/:id/approve` → Approve content
+* `PATCH /api/principal/content/:id/reject` → Reject content
 
-* Clean modular architecture
-* Optimized queries using `.lean()`
+---
+
+### Public
+
+* `GET /content/live/:teacherId` → Get live content for a teacher
+
+---
+
+## ⚙️ Setup Instructions
+
+---
+
+### 1. Install Dependencies
+
+```
+npm install
+```
+
+---
+
+### 2. Environment Variables (.env)
+
+```
+PORT=5000
+MONGO_URI=your_mongodb_connection
+JWT_SECRET=your_secret
+
+AWS_ACCESS_KEY=your_key
+AWS_SECRET_KEY=your_secret
+AWS_REGION=your_region
+AWS_BUCKET_NAME=your_bucket
+```
+
+---
+
+### 3. Run Server
+
+```
+npx nodemon
+```
+
+---
+
+## 🧪 Testing
+
+Use Postman to test APIs:
+
+1. Login → get token
+2. Use token in headers:
+
+   ```
+   Authorization: Bearer <token>
+   ```
+
+---
+
+## ⚠️ Edge Cases Handled
+
+* No content available
+* Approved but outside schedule window
+* Invalid teacherId
+* File validation errors
+* Unauthorized access
+* Missing required fields
+
+---
+
+## 📊 Production Considerations
+
+* Clean layered architecture
+* Optimized DB queries (`lean()`)
 * Pagination support
+* Centralized error handling
+* Scalable design approach
+
+---
+
+## ⚠️ Note on Database Choice
+
+Although the assignment suggested PostgreSQL/MySQL, I chose MongoDB to focus on rapid development and flexible schema design.
+
+I am currently learning PostgreSQL and relational database design and can easily adapt this system to a SQL-based architecture if required.
+
+---
+
+## 🌟 Bonus Features (Optional)
+
+* Redis caching (for live API)
 * Rate limiting
+* Logging system
+* Analytics tracking
 
-### Future Improvements:
+---
 
-* Redis caching for live API
-* Queue system for heavy processing
-* Logging & monitoring
+## 📹 Demo
+
+https://your-demo-video-link
+
+---
+
+## 🔗 API Documentation
+
+https://documenter.getpostman.com/view/35153003/2sBXqJJfH8
+
+---
+
+## 👨‍💻 Author
+
+Annu Singh
+Backend Developer
 
 ---
 
 ## 🏁 Conclusion
 
-The system is designed with a **scalable and modular backend architecture**, ensuring proper separation of concerns, secure role-based access, and efficient real-time content broadcasting using scheduling and rotation logic.
+This project demonstrates a real-world backend system with authentication, approval workflows, and dynamic content broadcasting using scheduling and rotation logic. It reflects strong backend fundamentals, clean architecture, and scalability considerations.

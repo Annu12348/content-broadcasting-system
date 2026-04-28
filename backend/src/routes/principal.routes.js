@@ -29,15 +29,10 @@ router.get(
 )
 
 router.get(
-    "/uploads",
+    "/all",
     authUser,
     authorizeRoles("principal"),
     principalControllers.principalUploadContentRead.bind(principalControllers)
 )
-
-router.get(
-    "/live/:teacherId",
-    principalControllers.getLiveContent.bind(principalControllers)
-  );
 
 export default router;
