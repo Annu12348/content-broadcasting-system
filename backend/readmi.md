@@ -241,4 +241,4 @@ Backend Developer
 
 ## 🏁 Conclusion
 
-This project demonstrates a real-world backend system with authentication, approval workflows, and dynamic content broadcasting using scheduling and rotation logic. It reflects strong backend fundamentals, clean architecture, and scalability considerations.
+This project demonstrates a real-world backend system with authentication, approval workflows, and dynamic content broadcasting using scheduling and rotation logic. It reflects strong backend fundamentals, clean architecture, and scalability considerations.m
